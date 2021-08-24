@@ -1,8 +1,9 @@
 {
-    "name": "Sledgehammer0.1",
+    "name": "Sledgehammer0.2",
     "description": "",
     "dependencies": {
-        "core": "*"
+        "core": "*",
+        "bluetooth": "*"
     },
     "files": [
         "main.ts",
@@ -13,12 +14,12 @@
         "test.ts"
     ],
     "targetVersions": {
-        "target": "4.0.9",
+        "target": "4.0.11",
         "targetId": "microbit"
     },
     "supportedTargets": [
         "microbit"
     ],
-    "preferredEditor": "pyprj",
+    "preferredEditor": "tsprj",
     "languageRestriction": "python-only"
 }

@@ -2,7 +2,7 @@
 //  -- Tuneable variables --
 let delay = 10
 //  Millisecond delay for main loop. Signal read frequency = (1000/delay) Hz
-let input_pin = AnalogPin.P1
+let input_pin = AnalogPin.P2
 //  MicroBit pin where sensor is connected
 let noise_threshold = 2
 //  Threshold for noise filter. Must be bigger then signal noise.
@@ -19,7 +19,10 @@ let recording = false
 //  Used to pause main loop
 let start_time = 0
 //  Holds the time when last game started
+let bluetooth_connected = false
+//  Holds wether a device is connected via bluetooth or not
 //  Run this on startup
+bluetooth.startUartService()
 restart()
 function restart() {
     
@@ -64,12 +67,15 @@ function handle_input() {
     
     
     let signal = pins.analogReadPin(input_pin)
+    write_on_bluetooth(signal)
     let dT = delay * 1000
     let area = dT * ((signal + last_value) / 2 - (signal_base + noise_threshold))
     if (!(area < 0)) {
         total += area
     }
     
+    write_on_bluetooth(total)
+    display_total()
     if (total > total_goal) {
         recording = false
         time = (input.runningTime() - start_time) / 1000
@@ -78,13 +84,30 @@ function handle_input() {
     
 }
 
+function write_on_bluetooth(signal: number) {
+    let message: string;
+    if (bluetooth_connected) {
+        message = convertToText(signal)
+        bluetooth.uartWriteString(message)
+    }
+    
+}
+
 function display_total() {
-    basic.showString("" + total)
+    
+    let filled_led_rows = Math.round(total / 5)
+    for (let y = 0; y < 5; y++) {
+        if (y < filled_led_rows) {
+            for (let x = 0; x < 5; x++) {
+                led.plot(x, y)
+            }
+        }
+        
+    }
 }
 
 function display_goal_screen(time: number) {
-    let i: number;
-    for (i = 0; i < 6; i++) {
+    for (let i = 0; i < 6; i++) {
         basic.showLeds(`
             # # # # #
             # # # # #
@@ -95,21 +118,58 @@ function display_goal_screen(time: number) {
         basic.clearScreen()
         basic.pause(25)
     }
-    for (i = 0; i < 6; i++) {
-        basic.showNumber(time)
-        basic.pause(5000)
-    }
 }
 
-input.onButtonPressed(Button.A, function on_button_pressed_a() {
-    restart()
+bluetooth.onBluetoothConnected(function on_bluetooth_connected() {
+    
+    bluetooth_connected = true
+})
+bluetooth.onBluetoothDisconnected(function on_bluetooth_disconnected() {
+    
+    bluetooth_connected = false
 })
 basic.forever(function on_forever() {
     
     if (recording) {
         basic.pause(delay)
         handle_input()
-        display_total()
     }
     
 })
+let LED_row_patterns = [`
+            . . . . .
+            . . . . .
+            . . . . .
+            . . . . .
+            . . . . .
+            `, `
+            # # # # #
+            . . . . .
+            . . . . .
+            . . . . .
+            . . . . .
+            `, `
+            # # # # #
+            . . . . .
+            . . . . .
+            . . . . .
+            # # # # #
+            `, `
+            # # # # #
+            # # # # #
+            . . . . .
+            . . . . .
+            # # # # #
+            `, `
+            # # # # #
+            # # # # #
+            . . . . .
+            # # # # #
+            # # # # #
+            `, `
+            # # # # #
+            # # # # #
+            # # # # #
+            # # # # #
+            # # # # #
+            `]
