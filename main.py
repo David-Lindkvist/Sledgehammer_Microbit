@@ -1,10 +1,10 @@
 # Written by David A. Lindkvist 2021-07-26
 
 # -- Tuneable variables --
-delay = 100                 # Millisecond delay for main loop. Signal read frequency = (1000/delay) Hz
+delay = 20                  # Millisecond delay for main loop. Signal read frequency = (1000/delay) Hz
 input_pin = AnalogPin.P2    # MicroBit pin where sensor is connected
 noise_threshold = 4         # Threshold for noise filter. Must be bigger then signal noise.
-total_goal = 1000           # Hold the goal for the total. When reached the game starts over.
+total_goal = 100            # Hold the goal for the total. When reached the game starts over.
 
 # -- Other global variables --
 signal_base=0               # Hold the signal value from base pressure.
@@ -13,6 +13,7 @@ last_value=0        	    # Hold the previous signal value. Used to calculate sig
 recording=False             # Used to pause main loop
 start_time=0                # Holds the time when last game started
 bluetooth_connected=False   # Holds wether a device is connected via bluetooth or not
+debug=True                  # Turns on debug prints on bluetooth
 
 # Run this on startup
 bluetooth.start_uart_service()
@@ -44,22 +45,19 @@ def handle_input():
     global total
     global last_value
     global recording
+    global debug
 
     signal = pins.analog_read_pin(input_pin)
-    
-
-    dT = delay / 1000
-    area = dT * ((signal + last_value )/2 - (signal_base + noise_threshold))
+    area = ((signal + last_value )/2 - (signal_base + noise_threshold))
     if not area < 0:
         total += area
+        if debug:
+            write_on_bluetooth("----- " + convert_to_text(Math.round(area)) + " -----")
+            write_on_bluetooth(convert_to_text(signal))
     display_total()
-    message = convert_to_text(signal) + ", "+convert_to_text(Math.round(total))
-    write_on_bluetooth(message)
-
     if total > total_goal:
         recording = False
-        time = (input.running_time() - start_time) / 1000
-        display_goal_screen(time)
+        display_goal_screen()
         restart()
 
 def write_on_bluetooth(message):
@@ -69,13 +67,13 @@ def write_on_bluetooth(message):
 def display_total():
     global total
     global total_goal
-    filled_led_rows = Math.round(Math.map(total, 0, total_goal, 0, 5))
+    lit_leds = Math.round(Math.map(total, 0, total_goal, 0, 25))
     for y in range(5):
-        if y < filled_led_rows:
-            for x in range(5):
+        for x in range(5):
+            if (5*y+x <= lit_leds):
                 led.plot(x, y)
 
-def display_goal_screen(time):
+def display_goal_screen():
     for i in range(6):
         basic.show_leds("""
             # # # # #
@@ -86,7 +84,6 @@ def display_goal_screen(time):
             """)
         basic.clear_screen()
         basic.pause(25)
-    
 
 def on_bluetooth_connected():
     global bluetooth_connected

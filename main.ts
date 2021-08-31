@@ -1,12 +1,12 @@
 //  Written by David A. Lindkvist 2021-07-26
 //  -- Tuneable variables --
-let delay = 100
+let delay = 20
 //  Millisecond delay for main loop. Signal read frequency = (1000/delay) Hz
 let input_pin = AnalogPin.P2
 //  MicroBit pin where sensor is connected
 let noise_threshold = 4
 //  Threshold for noise filter. Must be bigger then signal noise.
-let total_goal = 1000
+let total_goal = 100
 //  Hold the goal for the total. When reached the game starts over.
 //  -- Other global variables --
 let signal_base = 0
@@ -21,6 +21,8 @@ let start_time = 0
 //  Holds the time when last game started
 let bluetooth_connected = false
 //  Holds wether a device is connected via bluetooth or not
+let debug = true
+//  Turns on debug prints on bluetooth
 //  Run this on startup
 bluetooth.startUartService()
 restart()
@@ -39,7 +41,7 @@ function restart() {
 
 //  Main loop
 function handle_input() {
-    let time: number;
+    
     
     
     
@@ -47,19 +49,20 @@ function handle_input() {
     
     
     let signal = pins.analogReadPin(input_pin)
-    let dT = delay / 1000
-    let area = dT * ((signal + last_value) / 2 - (signal_base + noise_threshold))
+    let area = (signal + last_value) / 2 - (signal_base + noise_threshold)
     if (!(area < 0)) {
         total += area
+        if (debug) {
+            write_on_bluetooth("----- " + convertToText(Math.round(area)) + " -----")
+            write_on_bluetooth(convertToText(signal))
+        }
+        
     }
     
     display_total()
-    let message = convertToText(signal) + ", " + convertToText(Math.round(total))
-    write_on_bluetooth(message)
     if (total > total_goal) {
         recording = false
-        time = (input.runningTime() - start_time) / 1000
-        display_goal_screen(time)
+        display_goal_screen()
         restart()
     }
     
@@ -75,18 +78,18 @@ function write_on_bluetooth(message: string) {
 function display_total() {
     
     
-    let filled_led_rows = Math.round(Math.map(total, 0, total_goal, 0, 5))
+    let lit_leds = Math.round(Math.map(total, 0, total_goal, 0, 25))
     for (let y = 0; y < 5; y++) {
-        if (y < filled_led_rows) {
-            for (let x = 0; x < 5; x++) {
+        for (let x = 0; x < 5; x++) {
+            if (5 * y + x <= lit_leds) {
                 led.plot(x, y)
             }
+            
         }
-        
     }
 }
 
-function display_goal_screen(time: number) {
+function display_goal_screen() {
     for (let i = 0; i < 6; i++) {
         basic.showLeds(`
             # # # # #
