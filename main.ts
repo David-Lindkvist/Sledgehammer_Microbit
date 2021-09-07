@@ -50,6 +50,7 @@ function handle_input() {
     
     let signal = pins.analogReadPin(input_pin)
     let area = (signal + last_value) / 2 - (signal_base + noise_threshold)
+    last_value = signal
     if (!(area < 0)) {
         total += area
         if (debug) {
@@ -110,6 +111,26 @@ bluetooth.onBluetoothConnected(function on_bluetooth_connected() {
 bluetooth.onBluetoothDisconnected(function on_bluetooth_disconnected() {
     
     bluetooth_connected = false
+})
+input.onButtonPressed(Button.A, function on_button_pressed_a() {
+    let signal: number;
+    
+    
+    
+    if (debug) {
+        signal = pins.analogReadPin(input_pin)
+        basic.showNumber(signal)
+        write_on_bluetooth("--- signal: " + convertToText(signal))
+        write_on_bluetooth("base: " + convertToText(signal_base))
+        write_on_bluetooth("total: " + convertToText(total))
+    }
+    
+})
+input.onButtonPressed(Button.B, function on_button_pressed_b() {
+    if (debug) {
+        restart()
+    }
+    
 })
 basic.forever(function on_forever() {
     

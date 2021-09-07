@@ -49,6 +49,7 @@ def handle_input():
 
     signal = pins.analog_read_pin(input_pin)
     area = ((signal + last_value )/2 - (signal_base + noise_threshold))
+    last_value = signal
     if not area < 0:
         total += area
         if debug:
@@ -94,5 +95,22 @@ def on_bluetooth_disconnected():
     global bluetooth_connected
     bluetooth_connected = False
 bluetooth.on_bluetooth_disconnected(on_bluetooth_disconnected)
+
+def on_button_pressed_a():
+    global signal_base
+    global total
+    global debug
+    if debug:
+        signal = pins.analog_read_pin(input_pin)
+        basic.show_number(signal)
+        write_on_bluetooth("--- signal: "+convert_to_text(signal))
+        write_on_bluetooth("base: "+convert_to_text(signal_base))
+        write_on_bluetooth("total: "+convert_to_text(total))
+input.on_button_pressed(Button.A, on_button_pressed_a)
+
+def on_button_pressed_b():
+    if debug:
+        restart()
+input.on_button_pressed(Button.B, on_button_pressed_b)
 
 basic.forever(on_forever)
