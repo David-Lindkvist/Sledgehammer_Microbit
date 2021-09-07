@@ -121,14 +121,7 @@ input.onButtonPressed(Button.A, function on_button_pressed_a() {
         signal = pins.analogReadPin(input_pin)
         basic.showNumber(signal)
         write_on_bluetooth("--- signal: " + convertToText(signal))
-        write_on_bluetooth("base: " + convertToText(signal_base))
-        write_on_bluetooth("total: " + convertToText(total))
-    }
-    
-})
-input.onButtonPressed(Button.B, function on_button_pressed_b() {
-    if (debug) {
-        restart()
+        write_on_bluetooth("base: " + convertToText(signal_base) + " total: " + convertToText(total))
     }
     
 })
